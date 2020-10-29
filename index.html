@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            background-color: gray;
+        }
+        elemento {
+            --largura-tela: ;
+
+        }
+        #tela {
+            background-color: white;
+            width: 113px;
+
+            display: grid;
+            align-items: center;
+            justify-content: right;
+            margin: 1px;
+            padding-right: 5px;
+        }
+
+        .botao {
+            width: 25px;
+            height: 25px;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1px;
+            cursor: pointer;
+            padding-right: 3px;
+        }
+
+        #bt0 {
+            width: 55px;
+        }
+
+        #btEnter {
+            height: 52px;
+            font-size: 8px;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+
+        table,
+        tr,
+        td,
+        th {
+            border-spacing: 0;
+            border: 0;
+            padding: 0;
+            margin: 0;
+        }
+        #historico{
+            background-color: white;
+            margin-top: 20px;
+            padding: 5px;
+            width: 120px;
+        }
+        .itemHistorico{
+            background-color: green;
+            padding: 5px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        function cliqueBotaoTela(event) {
+            var className = event.target.className
+            if (className === "botao") {
+                entradaCaracter(event.target.innerText)
+            }
+        }
+
+        function cliqueTeclado(event) {
+            entradaCaracter(event.key)
+        }
+
+        function entradaCaracter(caracter) {
+            const ehNumero = !isNaN(Number(caracter))
+            if (ehNumero) {
+                addCaracterTela(caracter)
+            } else {
+                const acaoCalculadora = acoesCalculadora[caracter];
+                if (acaoCalculadora)
+                    acaoCalculadora();
+            }
+        }
+
+        function addCaracterTela(caracter) {
+            if(resultadoEmTela){
+                arrayNumeros[0] = "0"
+                resultadoEmTela = false
+            }
+            const valorAtual = getUltimoValorEmTela()
+            if (acoesCalculadora[valorAtual])
+                arrayNumeros.push(caracter)
+            else
+                setUltimoNumeroEmTela(String(valorAtual + caracter))
+            setValorTela()
+        }
+
+        const acoesCalculadora = {
+            co: zerarTudo,
+            Escape: zerarTudo,
+            '.': addPonto,
+            ',': addPonto,
+            '+': () => operacoes('+'),
+            '-': () => operacoes('-'),
+            '*': () => operacoes('*'),
+            '/': () => operacoes('/'),
+            'Enter': () => operacoes('='),
+            '=': () => operacoes('='),
+        }
+
+        function zerarTudo() {
+            arrayNumeros = ["0"]
+            arrayOperacoes = []
+            setValorTela();
+        }
+
+        function addPonto() {
+            if(resultadoEmTela){
+                arrayNumeros[0] = "0"
+                resultadoEmTela = false
+            }
+            const ultimoValorEmTela = getUltimoValorEmTela()
+            if (acoesCalculadora[ultimoValorEmTela]) {
+                arrayNumeros.push("0.")
+                setValorTela()
+            }
+            else if (!existePontoEmTela()) {
+                addCaracterTela(".")
+            }
+        }
+
+        function existePontoEmTela() {
+            const ultimoValorEmTela = getUltimoValorEmTela()
+            for (const char of ultimoValorEmTela) {
+                if (char === ".")
+                    return true;
+            }
+            return false
+        }
+
+        function operacoes(operacao) {
+            if(resultadoEmTela){
+                //arrayNumeros[0] = "0"
+                resultadoEmTela = false
+            }
+            const ultimoValorEmTela = getUltimoValorEmTela()
+            const ehOperacao = acoesCalculadora[ultimoValorEmTela]
+            //console.log(ehOperacao, operacao)
+            if (ehOperacao && operacao !== "=")
+                setUltimoOperador(operacao)
+            else if(!ehOperacao && operacao !== "=")
+                arrayOperacoes.push(operacao)
+            else if(!ehOperacao && operacao === "=" && arrayOperacoes.length){
+                //console.log(operacao)
+                calculaResultadoTela()
+            }
+            if(operacao !== "="){
+                setValorTela()
+            }
+        }
+
+        function calculaResultadoTela(){
+            let valor1 = Number(arrayNumeros[0]);
+            arrayOperacoes.forEach((operacao, i) =>{
+                const valor2 = Number(arrayNumeros[i+1]);
+                valor1 = executaOperacoes[operacao](valor1, valor2)
+            })
+            arrayResultados.push(String(valor1))
+            addHistorico()
+            zerarTudo()
+            arrayNumeros[0] = String(valor1)
+            resultadoEmTela = true
+            setValorTela()
+        }
+
+        const executaOperacoes = {
+            '+': (a, b) => (a + b),
+            '-': (a, b) => (a - b),
+            '*': (a, b) => (a * b),
+            '/': (a, b) => (a / b),
+        }
+
+        function getUltimoValorEmTela() {
+            const qtdOperacoes = arrayOperacoes.length;
+            const qtdNumeros = arrayNumeros.length;
+            const ultimaOperacao = arrayOperacoes[qtdOperacoes - 1]
+            const ultimoNumero = arrayNumeros[qtdNumeros - 1]
+            return qtdOperacoes === qtdNumeros ? ultimaOperacao : ultimoNumero
+        }
+
+        function setUltimoNumeroEmTela(valor) {
+            if (valor.charAt(0) === "0" && !existePontoEmTela())
+                valor = valor.replace("0", "")
+            arrayNumeros[arrayNumeros.length - 1] = valor
+        }
+
+        function setUltimoOperador(operador){
+            arrayOperacoes[arrayOperacoes.length - 1] = operador
+        }
+
+        function setValorTela() {
+            //console.log(arrayNumeros, arrayOperacoes)
+            let txt = ""
+            arrayNumeros.forEach((ele, i) => {
+                txt += ` ${ele} ${arrayOperacoes[i]?arrayOperacoes[i]:""}` 
+            })
+            document.getElementById('tela').innerText = txt
+        }
+
+        function addHistorico(){
+            const listaHist = document.getElementById('listaHistorico')
+            const newHist = document.createElement('div')
+            newHist.classList.add('itemHistorico')
+            newHist.innerText = document.getElementById('tela').innerText + " = " + arrayResultados[arrayResultados.length -1]
+            listaHist.appendChild(newHist)
+        }
+
+        let arrayOperacoes = [];
+        let arrayNumeros = ["0"];
+        let arrayResultados = [];
+        let resultadoEmTela = false;
+        document.addEventListener("click", cliqueBotaoTela)
+
+        document.onkeyup = cliqueTeclado;
+    </script>
+</head>
+
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th colspan="4">
+                    <div id="tela">0</div>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <div id="btco" class="botao">co</div>
+                </td>
+                <td>
+                    <div id="bt/" class="botao">/</div>
+                </td>
+                <td>
+                    <div id="bt*" class="botao">*</div>
+                </td>
+                <td>
+                    <div id="bt-" class="botao">-</div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div id="bt7" class="botao">7</div>
+                </td>
+                <td>
+                    <div id="bt8" class="botao">8</div>
+                </td>
+                <td>
+                    <div id="bt9" class="botao">9</div>
+                </td>
+                <td>
+                    <div id="bt+" class="botao">+</div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div id="bt4" class="botao">4</div>
+                </td>
+                <td>
+                    <div id="bt5" class="botao">5</div>
+                </td>
+                <td>
+                    <div id="bt6" class="botao">6</div>
+                </td>
+                <td>
+                    <div id="btpt" class="botao">.</div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div id="bt1" class="botao">1</div>
+                </td>
+                <td>
+                    <div id="bt2" class="botao">2</div>
+                </td>
+                <td>
+                    <div id="bt3" class="botao">3</div>
+                </td>
+                <td rowspan="2">
+                    <div id="btEnter" class="botao">Enter</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <div id="bt0" class="botao">0</div>
+                </td>
+                <td>
+                    <div id="btvirg" class="botao">,</div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div id="historico">
+        <div>Historico</div>
+        <div id="listaHistorico"></div>
+    </div>
+</body>
+
+</html>
